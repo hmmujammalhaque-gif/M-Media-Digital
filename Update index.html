@@ -1,0 +1,146 @@
+// Import Google Play Services & Credential Manager libraries in build.gradle.kts
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+
+fun triggerGoogleSignIn(webView: WebView) {
+    val credentialManager = CredentialManager.create(this)
+    
+    val googleIdOption = GetGoogleIdOption.Builder()
+        .setFilterByAuthorizedAccounts(false)
+        .setServerClientId("YOUR_WEB_CLIENT_ID.apps.googleusercontent.com")
+        .build()
+
+    val request = GetCredentialRequest.Builder()
+        .addCredentialOption(googleIdOption)
+        .build()
+
+    lifecycleScope.launch {
+        try {
+            val result = credentialManager.getCredential(this@MainActivity, request)
+            val credential = result.credential
+            // Extract idToken or Google Id Details
+            val googleIdToken = credential.data.getString("androidx.credentials.TYPE_PUBLIC_KEY_CREDENTIAL_SOURCE_ID")
+            
+            // Bridge the authentication status back into the WebView
+            webView.evaluateJavascript("javascript:onNativeLoginSuccess('$googleIdToken')", null)
+        } catch (e: Exception) {
+            webView.evaluateJavascript("javascript:onNativeLoginFailure('${e.localizedMessage}')", null)
+        }
+    }
+}
+// Import Firebase App and Database SDKs in index.html
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "m-media-network.firebaseapp.com",
+  databaseURL: "https://m-media-network-default-rtdb.firebaseio.com",
+  projectId: "m-media-network"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// Dispatching messages live to node collections:
+function dispatchLiveMessage() {
+    const text = document.getElementById('chatInputField').value.trim();
+    if (!text) return;
+
+    push(ref(db, 'chats/' + activeChatUserId + '/messages'), {
+        sender: currentUser.email,
+        text: text,
+        timestamp: Date.now()
+    });
+}
+
+// Subscribing to instant real-time message changes:
+function listenForIncomingMessages(chatId) {
+    const msgRef = ref(db, 'chats/' + chatId + '/messages');
+    onChildAdded(msgRef, (snapshot) => {
+        const msg = snapshot.val();
+        appendMessageBubbleToFlow(msg);
+    });
+}
+import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+const storage = getStorage(app);
+
+function uploadFileToFirebase(fileBlob) {
+    const fileRef = sRef(storage, 'posts_media/' + Date.now() + '.jpg');
+    uploadBytes(fileRef, fileBlob).then((snapshot) => {
+        getDownloadURL(snapshot.ref).then((downloadURL) => {
+            // Save this URL to your Realtime Database node
+            document.getElementById('attached-media-img').src = downloadURL;
+        });
+    });
+}
+import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+const storage = getStorage(app);
+
+function uploadFileToFirebase(fileBlob) {
+    const fileRef = sRef(storage, 'posts_media/' + Date.now() + '.jpg');
+    uploadBytes(fileRef, fileBlob).then((snapshot) => {
+        getDownloadURL(snapshot.ref).then((downloadURL) => {
+            // Save this URL to your Realtime Database node
+            document.getElementById('attached-media-img').src = downloadURL;
+        });
+    });
+}
+package com.example
+
+import com.google.firebase.messaging.FirebaseMessagingService
+import com.google.firebase.messaging.RemoteMessage
+import android.app.NotificationManager
+import android.app.NotificationChannel
+import android.os.Build
+import androidx.core.app.NotificationCompat
+
+class MMediaMessagingService : FirebaseMessagingService() {
+    
+    override fun onMessageReceived(remoteMessage: RemoteMessage) {
+        val title = remoteMessage.notification?.title ?: "M-Media Update"
+        val body = remoteMessage.notification?.body ?: "লগইন করুন নতুন পোস্ট চেক করতে!"
+        
+        showNotification(title, body)
+    }
+
+    private fun showNotification(title: String, message: String) {
+        val channelId = "fcm_default_channel"
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(channelId, "Firebase Alerts", NotificationManager.IMPORTANCE_HIGH)
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        val builder = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setAutoCancel(true)
+
+        notificationManager.notify(103, builder.build())
+    }
+}
+// Registers in onCreate as an activity result contract
+private val notificationPermissionLauncher = registerForActivityResult(
+    ActivityResultContracts.RequestPermission()
+) { isGranted ->
+    // Handle true or false outcome securely ...
+}
+
+// Declare inside manifest node:
+// <uses-permission android:name="android.permission.CAMERA" />
+<intent-filter android:autoVerify="true">
+    <action android:name="android.intent.action.VIEW" />
+    <category android:name="android.intent.category.DEFAULT" />
+    <category android:name="android.intent.category.BROWSABLE" />
+    <data android:scheme="http" />
+    <data android:scheme="https" />
+    <data android:host="shahganjprotidin.blogspot.com" />
+    <data android:host="doinikkobitaprokashoni1.blogspot.com" />
+</intent-filter>
+      
